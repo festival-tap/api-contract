@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ==============================================================================
+  Specification: festival-tap/api-contract Maven Build
+  ==============================================================================
+  Purpose:
+    Generates framework-free Java 24 Jackson DTOs directly from the canonical
+    OpenAPI 3.0 contract (src/main/resources/openapi.yaml) and packages both
+    the compiled DTO classes and the raw specification into an immutable JAR.
+
+  Architectural Boundaries:
+    - Design-first contract: no hand-written DTO classes exist in src/main/java.
+    - Pure wire models only (generateApis=false): zero Spring, JAX-RS, HTTP
+      client, or AWS SDK dependencies leak into the contract artifact.
+    - Consumed downstream by festival-tap/ingress (REST/Lambda translation)
+      and referenced by festival-tap/ui for TypeScript client generation.
+    - Published to GitHub Packages (com.festivaltap:api-contract) on SemVer tags.
+  ==============================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://apache.org">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.festivaltap</groupId>
+    <artifactId>api-contract</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>festival-tap :: api-contract</name>
+    <description>Design-first OpenAPI 3.0 REST specification and generated Java 24 DTOs for festival-tap</description>
+    <url>https://github.com</url>
+
+    <properties>
+        <maven.compiler.release>24</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <openapi-generator.version>7.12.0</openapi-generator.version>
+        <jackson.version>2.18.3</jackson.version>
+        <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
+        <junit.version>5.12.1</junit.version>
+    </properties>
+
+    <dependencies>
+        <!-- Lightweight Jackson annotations & serialization support for generated DTOs -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${jakarta.annotation.version}</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+
+            <!-- Generate pure Java DTOs from OpenAPI 3.0 spec -->
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>${openapi-generator.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-dtos</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
+                            <generatorName>java</generatorName>
+                            <library>native</library>
+                            <modelPackage>com.festivaltap.contract.dto</modelPackage>
+                            <generateApis>false</generateApis>
+                            <generateModels>true</generateModels>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <configOptions>
+                                <sourceFolder>src/gen/java/main</sourceFolder>
+                                <dateLibrary>java8</dateLibrary>
+                                <useJakartaEe>true</useJakartaEe>
+                                <openApiNullable>false</openApiNullable>
+                                <serializableModel>true</serializableModel>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+            </plugin>
+        </plugins>
+    </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages (festival-tap)</name>
+            <url>https://github.com</url>
+        </repository>
+    </distributionManagement>
+</project>

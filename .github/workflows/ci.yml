@@ -1,0 +1,45 @@
+# ==============================================================================
+# Specification: festival-tap/api-contract CI Pipeline
+# ==============================================================================
+# Purpose:
+#   Validates the OpenAPI 3.0 contract (src/main/resources/openapi.yaml),
+#   generates pure Jackson DTO classes, and compiles/verifies the Java 24 JAR
+#   on every push and Pull Request to main.
+#
+# Execution Model:
+#   - Uses JDK 24 (Eclipse Temurin) with Maven local repository caching.
+#   - Runs `mvn -B clean verify` to ensure OpenAPI codegen succeeds cleanly
+#     and all generated models compile without errors.
+#   - Does NOT publish artifacts (publishing is strictly gated on SemVer tags
+#     via publish.yml).
+# ==============================================================================
+
+name: CI — OpenAPI & DTO Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-contract:
+    name: Validate OpenAPI Spec & Compile DTOs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 24 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Validate OpenAPI spec & build DTO JAR
+        run: mvn -B clean verify

@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: Beer Tap Dispenser API
+  description: >
+    API to manage beer dispensers, simulate tap open/close and query usage statistics.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server (versioned)
+
+paths:
+  /dispenser:
+    post:
+      summary: Create a new dispenser
+      operationId: createTap
+      tags:
+        - Dispenser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiCreateDispenserRequest'
+      responses:
+        '201':
+          description: Dispenser created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiDispenser'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+    get:
+      summary: List all dispensers
+      operationId: listTaps
+      tags:
+        - Dispenser
+      responses:
+        '200':
+          description: A list of dispensers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiDispenser'
+
+  /dispenser/{id}/status:
+    put:
+      summary: Change the dispenser status (open/close)
+      operationId: changeTapStatus
+      tags:
+        - Dispenser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Dispenser ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiStatusChangeRequest'
+      responses:
+        '204':
+          description: Status updated successfully.
+        '400':
+          description: Invalid status value or missing body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Dispenser not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Conflict (e.g., tap already in requested state)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /dispenser/{id}/spending:
+    get:
+      summary: Get usage statistics for a dispenser
+      operationId: getTapSpending
+      tags:
+        - Dispenser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Dispenser ID
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSpendingResponse'
+        '404':
+          description: Dispenser not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+components:
+  schemas:
+    ApiCreateDispenserRequest:
+      type: object
+      required:
+        - flow_volume
+      properties:
+        flow_volume:
+          type: number
+          format: double
+          minimum: 0
+          description: Flow volume in litres per second
+          example: 0.064
+
+    ApiDispenser:
+      type: object
+      required:
+        - id
+        - flow_volume
+        - status
+      properties:
+        id:
+          type: string
+#          format: uuid // may be any hardware format MAC, IMEI, PPID, Serial Number
+          description: Unique identifier of the dispenser
+        flow_volume:
+          type: number
+          format: double
+          description: Flow volume in litres per second
+        status:
+          type: string
+          description: "open or close"
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        total_spent:
+          type: number
+          format: double
+          description: Amount charged for the current/last usage (only present after closing)
+
+    ApiStatusChangeRequest:
+      type: object
+      required:
+        - status
+        - updated_at
+      properties:
+        status:
+          type: string
+          description: "open or close"
+          example: open
+        updated_at:
+          type: string
+          format: date-time
+          description: "ISO 8601 UTC timestamp of the status change"
+          example: "2022-01-01T02:00:00Z"
+
+    ApiSpendingResponse:
+      type: object
+      required:
+        - amount
+        - usages
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Total billing amount
+        usages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiUsageLine'
+
+    ApiUsageLine:
+      type: object
+      required:
+        - opened_at
+        - flow_volume
+        - total_spent
+      properties:
+        opened_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+        flow_volume:
+          type: number
+          format: double
+        total_spent:
+          type: number
+          format: double
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - statusCode
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Machine‑readable error code (e.g., "DISPENSER_NOT_FOUND")
+        message:
+          type: string
+          description: Human‑readable explanation
+        statusCode:
+          type: integer
+          description: HTTP status code
+        timestamp:
+          type: string
+          format: date-time
+          description: UTC timestamp when the error occurred
