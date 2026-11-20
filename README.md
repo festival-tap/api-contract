@@ -53,10 +53,10 @@ api-contract/
 
 | Method | Path | Auth / Header | Behavioral Spec (`user-stories`) | Summary |
 | :--- | :--- | :--- | :--- | :--- |
-| **`POST`** | `/api/v1/dispensers` | Admin Auth | `us-01`, `us-06` | Register a new beer dispenser (`flow_volume`, pricing). |
-| **`GET`** | `/api/v1/dispensers` | `X-Festival-Pass` | `us-02`, `us-07` | List all active dispensers and live pricing. |
-| **`PUT`** | `/api/v1/dispensers/{id}/status` | `X-Festival-Pass` | `us-03`, `us-04`, `us-07` | Open or close a tap (`0.15 L` automatic safety shut-off). |
-| **`GET`** | `/api/v1/dispensers/{id}/spending` | Admin Auth | `us-05`, `us-06` | Retrieve dispensed volume and revenue totals from event replay. |
+| **`POST`** | `/api/v1/dispenser` | Admin Auth | `us-01`, `us-06` | Register a new beer dispenser (`flow_volume`, pricing). |
+| **`GET`** | `/api/v1/dispenser` | `X-Festival-Pass` | `us-02`, `us-07` | List all active dispensers and live pricing. |
+| **`PUT`** | `/api/v1/dispenser/{id}/status` | `X-Festival-Pass` | `us-03`, `us-04`, `us-07` | Open or close a tap (`0.15 L` automatic safety shut-off). |
+| **`GET`** | `/api/v1/dispenser/{id}/spending` | Admin Auth | `us-05`, `us-06` | Retrieve dispensed volume and revenue totals from event replay. |
 
 *(Exact paths and schemas are governed by `src/main/resources/openapi.yaml`.)*
 
